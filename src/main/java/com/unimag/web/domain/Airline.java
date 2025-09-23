@@ -3,6 +3,7 @@ package com.unimag.web.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,6 +21,12 @@ public class Airline {
 
     private String name;
 
-    @OneToMany(mappedBy = "airline")
-    List<Flight> flights;
+    @OneToMany(mappedBy = "airline", cascade = CascadeType.ALL)
+    @Builder.Default
+    List<Flight> flights = new ArrayList<>();
+
+    public void addFlight(Flight flight) {
+        flights.add(flight);
+        flight.setAirline(this);
+    }
 }
