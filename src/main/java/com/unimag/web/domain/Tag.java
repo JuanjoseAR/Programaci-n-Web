@@ -3,6 +3,7 @@ package com.unimag.web.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -18,9 +19,7 @@ public class Tag {
     private Long id;
     private String name;
 
-    @ManyToMany
-    @JoinTable(name = "flight_tags",
-            joinColumns = @JoinColumn(name = "tag_id"),
-            inverseJoinColumns = @JoinColumn(name = "flight_id"))
-    Set<Flight> flights;
+    @ManyToMany(mappedBy = "tags")
+    @Builder.Default
+    Set<Flight> flights = new HashSet<>();
 }

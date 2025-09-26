@@ -12,7 +12,7 @@ import lombok.*;
 @Builder
 public class SeatInventory {
     @Id @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long Id;
+    private Long id;
 
     @Enumerated(EnumType.STRING)
     private Cabin cabin;
