@@ -18,4 +18,5 @@ public class PassengerProfile {
     private String phone;
 
     private String countryCode;
+
 }
