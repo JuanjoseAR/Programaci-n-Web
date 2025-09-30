@@ -2,6 +2,7 @@ package com.unimag.web.mapper;
 
 import com.unimag.web.api.dto.BookingDto;
 import com.unimag.web.domain.*;
+import com.unimag.web.services.mapper.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

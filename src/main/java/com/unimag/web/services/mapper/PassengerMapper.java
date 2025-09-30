@@ -1,4 +1,4 @@
-package com.unimag.web.mapper;
+package com.unimag.web.services.mapper;
 
 import com.unimag.web.domain.Passenger;
 import com.unimag.web.api.dto.PassengerDto;
