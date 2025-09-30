@@ -2,33 +2,30 @@ package com.unimag.web.mapper;
 
 import com.unimag.web.api.dto.BookingDto;
 import com.unimag.web.domain.*;
-import com.unimag.web.services.mapper.*;
-import org.junit.jupiter.api.BeforeEach;
+import com.unimag.web.services.mapper.BookingMapper;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BookingMapperTest {
 
-    private BookingMapper bookingMapper;
-
-    @BeforeEach
-    void setUp() {
-
-        PassengerMapper passengerMapper = new PassengerMapper();
-        AirlineMapper airlineMapper = new AirlineMapper();
-        AirportMapper airportMapper = new AirportMapper();
-        TagMapper tagMapper = new TagMapper();
-        FlightMapper flightMapper = new FlightMapper(airlineMapper, airportMapper, tagMapper);
-        bookingMapper = new BookingMapper(passengerMapper, flightMapper);
-    }
-
     @Test
     void shouldMapBookingEntityToBookingResponseDto() {
+        Airline airline = new Airline();
+        airline.setId(1L);
+        airline.setCode("AV");
+        airline.setName("Avianca");
+
+        Airport airport = new Airport();
+        airport.setId(1L);
+        airport.setCode("BOG");
+        airport.setName("El Dorado");
+        airport.setCity("Bogota");
 
         Passenger passenger = new Passenger();
         passenger.setId(1L);
@@ -38,6 +35,10 @@ class BookingMapperTest {
         Flight flight = new Flight();
         flight.setId(100L);
         flight.setFlightNumber("AV24");
+        flight.setAirline(airline);
+        flight.setOrigin(airport);
+        flight.setDestination(airport);
+        flight.setTags(Collections.emptySet());
 
         BookingItem item = new BookingItem();
         item.setId(10L);
@@ -50,9 +51,10 @@ class BookingMapperTest {
         bookingEntity.setCreatedAt(OffsetDateTime.now());
         bookingEntity.setPassenger(passenger);
         bookingEntity.setItems(List.of(item));
+        item.setBooking(bookingEntity);
 
 
-        BookingDto.BookingResponse responseDto = bookingMapper.toResponse(bookingEntity);
+        BookingDto.BookingResponse responseDto = BookingMapper.toResponse(bookingEntity);
 
 
         assertThat(responseDto).isNotNull();

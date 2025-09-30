@@ -1,39 +1,24 @@
 package com.unimag.web.services.mapper;
 
-import com.unimag.web.domain.Booking;
-import com.unimag.web.domain.BookingItem;
-import com.unimag.web.domain.Cabin;
-import com.unimag.web.domain.Flight;
-import com.unimag.web.domain.Passenger;
-import com.unimag.web.api.dto.BookingDto;
-import com.unimag.web.api.dto.FlightDto;
-import com.unimag.web.api.dto.PassengerDto;
-import org.springframework.stereotype.Component;
+import com.unimag.web.domain.*;
+import com.unimag.web.api.dto.*;
 
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Component
+
 public class BookingMapper {
 
-    private final PassengerMapper passengerMapper;
-    private final FlightMapper flightMapper;
-
-    public BookingMapper(PassengerMapper passengerMapper, FlightMapper flightMapper) {
-        this.passengerMapper = passengerMapper;
-        this.flightMapper = flightMapper;
-    }
-
-    public BookingDto.BookingResponse toResponse(Booking booking) {
+    public static BookingDto.BookingResponse toResponse(Booking booking) {
         if (booking == null) {
             return null;
         }
 
-        PassengerDto.PassengerResponse passengerResponse = passengerMapper.toResponse(booking.getPassenger());
+        PassengerDto.PassengerResponse passengerResponse = PassengerMapper.toResponse(booking.getPassenger());
         List<BookingDto.BookingItemResponse> itemsResponse = (booking.getItems() != null)
-                ? booking.getItems().stream().map(this::toItemResponse).collect(Collectors.toList())
+                ? booking.getItems().stream().map(BookingMapper::toItemResponse).collect(Collectors.toList())
                 : Collections.emptyList();
 
         return new BookingDto.BookingResponse(
@@ -44,12 +29,12 @@ public class BookingMapper {
         );
     }
 
-    public BookingDto.BookingItemResponse toItemResponse(BookingItem item) {
+    public static BookingDto.BookingItemResponse toItemResponse(BookingItem item) {
         if (item == null) {
             return null;
         }
 
-        FlightDto.FlightResponse flightResponse = flightMapper.toResponse(item.getFlight());
+        FlightDto.FlightResponse flightResponse = FlightMapper.toResponse(item.getFlight());
 
         return new BookingDto.BookingItemResponse(
                 item.getId(),
@@ -60,13 +45,12 @@ public class BookingMapper {
         );
     }
 
-    public Booking toEntity(BookingDto.BookingCreateRequest request) {
+    public static Booking toEntity(BookingDto.BookingCreateRequest request) {
         if (request == null) {
             return null;
         }
 
         Booking booking = new Booking();
-
         Passenger passenger = new Passenger();
         passenger.setId(request.passengerId());
         booking.setPassenger(passenger);
@@ -83,7 +67,7 @@ public class BookingMapper {
         return booking;
     }
 
-    private BookingItem toItemEntity(BookingDto.BookingItemCreateRequest itemRequest, Booking booking) {
+    private static BookingItem toItemEntity(BookingDto.BookingItemCreateRequest itemRequest, Booking booking) {
         if (itemRequest == null) {
             return null;
         }

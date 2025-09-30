@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PassengerMapper {
 
-    public PassengerDto.PassengerResponse toResponse(Passenger passenger) {
+    public static PassengerDto.PassengerResponse toResponse(Passenger passenger) {
         if (passenger == null) {
             return null;
         }
@@ -18,7 +18,7 @@ public class PassengerMapper {
         );
     }
 
-    public Passenger toEntity(PassengerDto.PassengerCreateRequest request) {
+    public static Passenger toEntity(PassengerDto.PassengerCreateRequest request) {
         if (request == null) {
             return null;
         }
