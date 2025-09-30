@@ -28,14 +28,13 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final PassengerRepository passengerRepository;
     private final FlightRepository flightRepository;
-    private final BookingMapper bookingMapper;
 
     @Override
     public BookingResponse create(BookingCreateRequest request) {
         Passenger passenger = passengerRepository.findById(request.passengerId())
                 .orElseThrow(() -> new NotFoundException("Passenger not found with id " + request.passengerId()));
 
-        Booking booking = bookingMapper.toEntity(request);
+        Booking booking = BookingMapper.toEntity(request);
         booking.setCreatedAt(OffsetDateTime.now());
         booking.setPassenger(passenger);
 
@@ -43,20 +42,20 @@ public class BookingServiceImpl implements BookingService {
         validateFlights(booking.getItems());
 
         Booking saved = bookingRepository.save(booking);
-        return bookingMapper.toResponse(saved);
+        return BookingMapper.toResponse(saved);
     }
 
     @Override @Transactional(readOnly = true)
     public BookingResponse findById(Long id) {
         Booking booking = bookingRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("Booking not found with id " + id));
-        return bookingMapper.toResponse(booking);
+        return BookingMapper.toResponse(booking);
     }
 
     @Override @Transactional(readOnly = true)
     public Page<BookingResponse> findAll(Pageable pageable) {
         return bookingRepository.findAll(pageable)
-                .map(bookingMapper::toResponse);
+                .map(BookingMapper::toResponse);
     }
 
     @Override
@@ -88,7 +87,7 @@ public class BookingServiceImpl implements BookingService {
         booking.getItems().addAll(newItems);
 
         Booking updated = bookingRepository.save(booking);
-        return bookingMapper.toResponse(updated);
+        return BookingMapper.toResponse(updated);
     }
 
     @Override

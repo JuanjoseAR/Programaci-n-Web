@@ -1,6 +1,5 @@
 package com.unimag.web.services;
 
-import static org.junit.jupiter.api.Assertions.*;
 import com.unimag.web.api.dto.BookingDto.*;
 import com.unimag.web.api.dto.FlightDto.*;
 import com.unimag.web.domain.*;
@@ -32,15 +31,12 @@ class BookingItemServiceImplTest {
     BookingRepository bookingRepo;
     @Mock
     FlightRepository flightRepo;
-    @Mock
-    BookingMapper bookingMapper;
 
     @InjectMocks
     BookingItemServiceImpl service;
 
     @Test
     void shouldAddItemAndMapToDto() {
-
         var booking = Booking.builder().id(1L).build();
         var flight = Flight.builder().id(2L).flightNumber("AV123").build();
         var req = new BookingItemCreateRequest("ECONOMY", "300.00", 1, 2L);
@@ -65,15 +61,16 @@ class BookingItemServiceImplTest {
         when(bookingRepo.findById(1L)).thenReturn(Optional.of(booking));
         when(flightRepo.findById(2L)).thenReturn(Optional.of(flight));
         when(itemRepo.save(any())).thenReturn(item);
-        when(bookingMapper.toItemResponse(item)).thenReturn(response);
 
+        try (MockedStatic<BookingMapper> mockedMapper = mockStatic(BookingMapper.class)) {
+            mockedMapper.when(() -> BookingMapper.toItemResponse(item)).thenReturn(response);
 
-        var out = service.addItem(1L, req);
+            var out = service.addItem(1L, req);
 
-
-        assertThat(out.id()).isEqualTo(33L);
-        assertThat(out.cabin()).isEqualTo("ECONOMY");
-        assertThat(out.flight().number()).isEqualTo("AV123");
+            assertThat(out.id()).isEqualTo(33L);
+            assertThat(out.cabin()).isEqualTo("ECONOMY");
+            assertThat(out.flight().number()).isEqualTo("AV123");
+        }
     }
 
     @Test
@@ -92,13 +89,16 @@ class BookingItemServiceImplTest {
 
         when(bookingRepo.findById(1L)).thenReturn(Optional.of(booking));
         when(itemRepo.findByBookingIdOrderBySegmentOrderAsc(1L)).thenReturn(List.of(item));
-        when(bookingMapper.toItemResponse(item)).thenReturn(response);
 
-        var list = service.listByBooking(1L);
+        try (MockedStatic<BookingMapper> mockedMapper = mockStatic(BookingMapper.class)) {
+            mockedMapper.when(() -> BookingMapper.toItemResponse(item)).thenReturn(response);
 
-        assertThat(list).hasSize(1);
-        assertThat(list.get(0).id()).isEqualTo(9L);
-        assertThat(list.get(0).flight().number()).isEqualTo("AV456");
+            var list = service.listByBooking(1L);
+
+            assertThat(list).hasSize(1);
+            assertThat(list.get(0).id()).isEqualTo(9L);
+            assertThat(list.get(0).flight().number()).isEqualTo("AV456");
+        }
     }
 
     @Test
@@ -121,5 +121,4 @@ class BookingItemServiceImplTest {
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("Flight 2 not found");
     }
-
 }

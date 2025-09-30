@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 
@@ -33,12 +34,9 @@ class FlightServiceImplTest {
     AirportRepository airportRepo;
     @Mock
     TagRepository tagRepo;
-    @Mock
-    FlightMapper flightMapper;
 
     @InjectMocks
     FlightServiceImpl service;
-
     @Test
     void shouldCreateFlightAndReturnResponse() {
         var request = new FlightCreateRequest("UN123", OffsetDateTime.now(), OffsetDateTime.now().plusHours(2), 1L, 2L, 3L, Set.of());
@@ -52,16 +50,20 @@ class FlightServiceImplTest {
         when(airlineRepo.findById(1L)).thenReturn(Optional.of(airline));
         when(airportRepo.findById(2L)).thenReturn(Optional.of(origin));
         when(airportRepo.findById(3L)).thenReturn(Optional.of(dest));
-        when(flightMapper.toEntity(request)).thenReturn(entity);
         when(flightRepo.save(entity)).thenReturn(entity);
-        when(flightMapper.toResponse(entity)).thenReturn(response);
 
-        var result = service.create(request);
+        try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
+            mocked.when(() -> FlightMapper.toEntity(request)).thenReturn(entity);
+            mocked.when(() -> FlightMapper.toResponse(entity)).thenReturn(response);
 
-        assertThat(result.id()).isEqualTo(10L);
-        assertThat(result.number()).isEqualTo("UN123");
-        verify(flightRepo).save(entity);
+            var result = service.create(request);
+
+            assertThat(result.id()).isEqualTo(10L);
+            assertThat(result.number()).isEqualTo("UN123");
+            verify(flightRepo).save(entity);
+        }
     }
+
 
     @Test
     void shouldThrowWhenAirlineNotFound() {
@@ -75,102 +77,203 @@ class FlightServiceImplTest {
 
     @Test
     void shouldGetFlightById() {
-        var flight = new Flight(); flight.setId(5L);
-        var response = new FlightResponse(5L, "AA101", OffsetDateTime.now(), OffsetDateTime.now().plusHours(2), null, null, null, Set.of());
+        var flight = new Flight();
+        flight.setId(5L);
+
+        var response = new FlightResponse(
+                5L,
+                "AA101",
+                OffsetDateTime.now(),
+                OffsetDateTime.now().plusHours(2),
+                null,
+                null,
+                null,
+                Set.of()
+        );
 
         when(flightRepo.findById(5L)).thenReturn(Optional.of(flight));
-        when(flightMapper.toResponse(flight)).thenReturn(response);
 
-        var result = service.get(5L);
+        try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
+            mocked.when(() -> FlightMapper.toResponse(flight))
+                    .thenReturn(response);
 
-        assertThat(result.id()).isEqualTo(5L);
-        assertThat(result.number()).isEqualTo("AA101");
+            var result = service.get(5L);
+
+            assertThat(result.id()).isEqualTo(5L);
+            assertThat(result.number()).isEqualTo("AA101");
+            verify(flightRepo).findById(5L);
+        }
     }
 
     @Test
     void shouldReturnFlightsByAirlineName() {
-        var flight = new Flight(); flight.setId(1L);
+        var flight = new Flight();
+        flight.setId(1L);
+
         var page = new PageImpl<>(List.of(flight));
-        var response = new FlightResponse(1L, "XY1", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1), null, null, null, Set.of());
+        var response = new FlightResponse(
+                1L,
+                "XY1",
+                OffsetDateTime.now(),
+                OffsetDateTime.now().plusHours(1),
+                null, null, null,
+                Set.of()
+        );
 
         when(flightRepo.findByAirlineName(eq("LATAM"), any())).thenReturn(page);
-        when(flightMapper.toResponse(flight)).thenReturn(response);
 
-        var result = service.listByAirline("LATAM", PageRequest.of(0, 10));
+        try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
+            mocked.when(() -> FlightMapper.toResponse(flight)).thenReturn(response);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getContent().get(0).id()).isEqualTo(1L);
+            var result = service.listByAirline("LATAM", PageRequest.of(0, 10));
+
+            assertThat(result).hasSize(1);
+            assertThat(result.getContent().get(0).id()).isEqualTo(1L);
+            assertThat(result.getContent().get(0).number()).isEqualTo("XY1");
+
+            // opcional: verificar que el mapper fue invocado
+            mocked.verify(() -> FlightMapper.toResponse(flight));
+        }
     }
+
 
     @Test
     void shouldSearchFlightsBetweenDates() {
         var flight = new Flight(); flight.setId(7L);
         var page = new PageImpl<>(List.of(flight));
-        var response = new FlightResponse(7L, "COPA7", OffsetDateTime.now(), OffsetDateTime.now().plusHours(2), null, null, null, Set.of());
+        var response = new FlightResponse(
+                7L, "COPA7", OffsetDateTime.now(),
+                OffsetDateTime.now().plusHours(2),
+                null, null, null, Set.of()
+        );
 
-        when(flightRepo.findByOriginCodeAndDestinationCodeAndDepartureTimeBetween(eq("BOG"), eq("MIA"), any(), any(), any()))
-                .thenReturn(page);
-        when(flightMapper.toResponse(flight)).thenReturn(response);
+        when(flightRepo.findByOriginCodeAndDestinationCodeAndDepartureTimeBetween(
+                eq("BOG"), eq("MIA"), any(), any(), any()
+        )).thenReturn(page);
 
-        var result = service.search("BOG", "MIA", OffsetDateTime.now(), OffsetDateTime.now().plusDays(1), PageRequest.of(0, 10));
+        try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
+            mocked.when(() -> FlightMapper.toResponse(flight)).thenReturn(response);
 
-        assertThat(result.getContent()).extracting(FlightResponse::id).containsExactly(7L);
+            var result = service.search(
+                    "BOG", "MIA",
+                    OffsetDateTime.now(),
+                    OffsetDateTime.now().plusDays(1),
+                    PageRequest.of(0, 10)
+            );
+
+            assertThat(result.getContent())
+                    .extracting(FlightResponse::id)
+                    .containsExactly(7L);
+        }
     }
-
     @Test
     void shouldSearchWithTags() {
-        var flight = new Flight(); flight.setId(12L);
-        var response = new FlightResponse(12L, "TAG12", OffsetDateTime.now(), OffsetDateTime.now().plusHours(2), null, null, null, Set.of());
+        var flight = new Flight();
+        flight.setId(12L);
 
-        when(flightRepo.findByAllTags(List.of("Promo"), 1)).thenReturn(List.of(flight));
-        when(flightMapper.toResponse(flight)).thenReturn(response);
+        var response = new FlightResponse(
+                12L,
+                "TAG12",
+                OffsetDateTime.now(),
+                OffsetDateTime.now().plusHours(2),
+                null,
+                null,
+                null,
+                Set.of()
+        );
 
-        var result = service.searchWithTags(List.of("Promo"));
+        when(flightRepo.findByAllTags(List.of("Promo"), 1))
+                .thenReturn(List.of(flight));
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).id()).isEqualTo(12L);
+        try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
+            mocked.when(() -> FlightMapper.toResponse(flight))
+                    .thenReturn(response);
+
+            var result = service.searchWithTags(List.of("Promo"));
+
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).id()).isEqualTo(12L);
+        }
     }
+
 
     @Test
     void shouldReturnEmptyWhenTagsEmpty() {
         var result = service.searchWithTags(Collections.emptyList());
         assertThat(result).isEmpty();
     }
-
     @Test
     void shouldAddTagToFlight() {
-        var flight = new Flight(); flight.setId(20L); flight.setTags(new HashSet<>());
-        var tag = new Tag(); tag.setId(30L);
-        var response = new FlightResponse(20L, "ADD", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1), null, null, null, Set.of());
+        var flight = new Flight();
+        flight.setId(20L);
+        flight.setTags(new HashSet<>());
+
+        var tag = new Tag();
+        tag.setId(30L);
+
+        var response = new FlightResponse(
+                20L,
+                "ADD",
+                OffsetDateTime.now(),
+                OffsetDateTime.now().plusHours(1),
+                null,
+                null,
+                null,
+                Set.of()
+        );
 
         when(flightRepo.findById(20L)).thenReturn(Optional.of(flight));
         when(tagRepo.findById(30L)).thenReturn(Optional.of(tag));
-        when(flightMapper.toResponse(flight)).thenReturn(response);
 
-        var result = service.addTag(20L, 30L);
+        try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
+            mocked.when(() -> FlightMapper.toResponse(flight))
+                    .thenReturn(response);
 
-        assertThat(flight.getTags()).contains(tag);
-        assertThat(result.id()).isEqualTo(20L);
+            var result = service.addTag(20L, 30L);
+
+            assertThat(flight.getTags()).contains(tag);
+            assertThat(result.id()).isEqualTo(20L);
+            verify(flightRepo).findById(20L);
+            verify(tagRepo).findById(30L);
+        }
     }
-
     @Test
     void shouldRemoveTagFromFlight() {
-        var tag = new Tag(); tag.setId(40L); tag.setFlights(new HashSet<>());
-        var flight = new Flight(); flight.setId(21L); flight.setTags(new HashSet<>(Set.of(tag)));
+        var tag = new Tag();
+        tag.setId(40L);
+        tag.setFlights(new HashSet<>());
+
+        var flight = new Flight();
+        flight.setId(21L);
+        flight.setTags(new HashSet<>(Set.of(tag)));
         tag.getFlights().add(flight);
-        var response = new FlightResponse(21L, "REM", OffsetDateTime.now(), OffsetDateTime.now().plusHours(1), null, null, null, Set.of());
+
+        var response = new FlightResponse(
+                21L,
+                "REM",
+                OffsetDateTime.now(),
+                OffsetDateTime.now().plusHours(1),
+                null, null, null,
+                Set.of()
+        );
 
         when(flightRepo.findById(21L)).thenReturn(Optional.of(flight));
         when(tagRepo.findById(40L)).thenReturn(Optional.of(tag));
-        when(flightMapper.toResponse(flight)).thenReturn(response);
 
-        var result = service.removeTag(21L, 40L);
+        try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
+            mocked.when(() -> FlightMapper.toResponse(flight)).thenReturn(response);
 
-        assertThat(flight.getTags())
-                .extracting(Tag::getId)
-                .doesNotContain(40L);
-        assertThat(result.id()).isEqualTo(21L);
+            var result = service.removeTag(21L, 40L);
+
+            assertThat(flight.getTags())
+                    .extracting(Tag::getId)
+                    .doesNotContain(40L);
+            assertThat(result.id()).isEqualTo(21L);
+
+            mocked.verify(() -> FlightMapper.toResponse(flight));
+        }
     }
+
 
     @Test
     void shouldDeleteFlight() {

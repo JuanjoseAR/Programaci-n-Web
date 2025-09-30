@@ -28,7 +28,6 @@ public class FlightServiceImpl implements FlightService {
     private final AirlineRepository airlineRepo;
     private final AirportRepository airportRepo;
     private final TagRepository tagRepo;
-    private final FlightMapper flightMapper;
 
     @Override
     public FlightResponse create(FlightCreateRequest req) {
@@ -39,7 +38,7 @@ public class FlightServiceImpl implements FlightService {
         Airport destination = airportRepo.findById(req.destinationAirportId())
                 .orElseThrow(() -> new NotFoundException("Airport %d not found".formatted(req.destinationAirportId())));
 
-        Flight flight = flightMapper.toEntity(req);
+        Flight flight = FlightMapper.toEntity(req);
         flight.setAirline(airline);
         flight.setOrigin(origin);
         flight.setDestination(destination);
@@ -53,14 +52,14 @@ public class FlightServiceImpl implements FlightService {
             flight.setTags(Set.copyOf(tags));
         }
 
-        return flightMapper.toResponse(flightRepo.save(flight));
+        return FlightMapper.toResponse(flightRepo.save(flight));
     }
 
     @Override
     @Transactional(readOnly = true)
     public FlightResponse get(Long id) {
         return flightRepo.findById(id)
-                .map(flightMapper::toResponse)
+                .map(FlightMapper::toResponse)
                 .orElseThrow(() -> new NotFoundException("Flight %d not found".formatted(id)));
     }
 
@@ -68,14 +67,14 @@ public class FlightServiceImpl implements FlightService {
     @Transactional(readOnly = true)
     public Page<FlightResponse> listByAirline(String airlineName, Pageable pageable) {
         return flightRepo.findByAirlineName(airlineName, pageable)
-                .map(flightMapper::toResponse);
+                .map(FlightMapper::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<FlightResponse> search(String origin, String destination, OffsetDateTime from, OffsetDateTime to, Pageable pageable) {
         return flightRepo.findByOriginCodeAndDestinationCodeAndDepartureTimeBetween(origin, destination, from, to, pageable)
-                .map(flightMapper::toResponse);
+                .map(FlightMapper::toResponse);
     }
 
     @Override
@@ -83,7 +82,7 @@ public class FlightServiceImpl implements FlightService {
     public List<FlightResponse> searchWithTags(List<String> tags) {
         if (tags == null || tags.isEmpty()) return List.of();
         return flightRepo.findByAllTags(tags, tags.size()).stream()
-                .map(flightMapper::toResponse)
+                .map(FlightMapper::toResponse)
                 .toList();
     }
 
@@ -95,7 +94,7 @@ public class FlightServiceImpl implements FlightService {
                 .orElseThrow(() -> new NotFoundException("Tag %d not found".formatted(tagId)));
 
         flight.addTag(tag);
-        return flightMapper.toResponse(flight);
+        return FlightMapper.toResponse(flight);
     }
 
     @Override
@@ -108,7 +107,7 @@ public class FlightServiceImpl implements FlightService {
         flight.getTags().remove(tag);
         tag.getFlights().remove(flight);
 
-        return flightMapper.toResponse(flight);
+        return FlightMapper.toResponse(flight);
     }
 
     @Override

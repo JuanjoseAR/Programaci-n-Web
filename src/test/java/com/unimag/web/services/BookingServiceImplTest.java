@@ -1,6 +1,5 @@
 package com.unimag.web.services;
 
-import static org.junit.jupiter.api.Assertions.*;
 import com.unimag.web.api.dto.BookingDto.*;
 import com.unimag.web.api.dto.PassengerDto;
 import com.unimag.web.domain.*;
@@ -29,7 +28,6 @@ class BookingServiceImplTest {
     @Mock BookingRepository bookingRepository;
     @Mock PassengerRepository passengerRepository;
     @Mock FlightRepository flightRepository;
-    @Mock BookingMapper bookingMapper;
 
     @InjectMocks
     BookingServiceImpl service;
@@ -56,17 +54,19 @@ class BookingServiceImplTest {
 
         when(passengerRepository.findById(1L)).thenReturn(Optional.of(passenger));
         when(flightRepository.findById(2L)).thenReturn(Optional.of(flight));
-        when(bookingMapper.toEntity(req)).thenReturn(booking);
         when(bookingRepository.save(any())).thenReturn(booking);
-        when(bookingMapper.toResponse(booking)).thenReturn(response);
 
-        var res = service.create(req);
+        try (MockedStatic<BookingMapper> mocked = mockStatic(BookingMapper.class)) {
+            mocked.when(() -> BookingMapper.toEntity(req)).thenReturn(booking);
+            mocked.when(() -> BookingMapper.toResponse(booking)).thenReturn(response);
 
-        assertThat(res.id()).isEqualTo(10L);
-        assertThat(res.passenger().email()).isEqualTo("j@test.com");
-        verify(bookingRepository).save(any(Booking.class));
+            var res = service.create(req);
+
+            assertThat(res.id()).isEqualTo(10L);
+            assertThat(res.passenger().email()).isEqualTo("j@test.com");
+            verify(bookingRepository).save(any(Booking.class));
+        }
     }
-
 
     @Test
     void shouldThrowWhenPassengerNotFoundOnCreate() {
@@ -84,11 +84,14 @@ class BookingServiceImplTest {
         var response = new BookingResponse(7L, null, null, List.of());
 
         when(bookingRepository.findByIdWithDetails(7L)).thenReturn(Optional.of(booking));
-        when(bookingMapper.toResponse(booking)).thenReturn(response);
 
-        var res = service.findById(7L);
+        try (MockedStatic<BookingMapper> mocked = mockStatic(BookingMapper.class)) {
+            mocked.when(() -> BookingMapper.toResponse(booking)).thenReturn(response);
 
-        assertThat(res.id()).isEqualTo(7L);
+            var res = service.findById(7L);
+
+            assertThat(res.id()).isEqualTo(7L);
+        }
     }
 
     @Test
@@ -106,12 +109,15 @@ class BookingServiceImplTest {
         var page = new PageImpl<>(List.of(booking));
 
         when(bookingRepository.findAll(PageRequest.of(0, 5))).thenReturn(page);
-        when(bookingMapper.toResponse(booking)).thenReturn(response);
 
-        var result = service.findAll(PageRequest.of(0, 5));
+        try (MockedStatic<BookingMapper> mocked = mockStatic(BookingMapper.class)) {
+            mocked.when(() -> BookingMapper.toResponse(booking)).thenReturn(response);
 
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().get(0).id()).isEqualTo(5L);
+            var result = service.findAll(PageRequest.of(0, 5));
+
+            assertThat(result.getTotalElements()).isEqualTo(1);
+            assertThat(result.getContent().get(0).id()).isEqualTo(5L);
+        }
     }
 
     @Test
@@ -136,16 +142,18 @@ class BookingServiceImplTest {
         when(passengerRepository.findById(1L)).thenReturn(Optional.of(passenger));
         when(flightRepository.findById(2L)).thenReturn(Optional.of(flight));
         when(bookingRepository.save(any())).thenReturn(booking);
-        when(bookingMapper.toResponse(booking)).thenReturn(response);
 
-        var res = service.update(10L, req);
+        try (MockedStatic<BookingMapper> mocked = mockStatic(BookingMapper.class)) {
+            mocked.when(() -> BookingMapper.toResponse(booking)).thenReturn(response);
 
-        assertThat(res.id()).isEqualTo(10L);
-        verify(bookingRepository).save(booking);
-        assertThat(booking.getItems()).hasSize(1);
-        assertThat(booking.getItems().get(0).getPrice()).isEqualByComparingTo(BigDecimal.valueOf(200));
+            var res = service.update(10L, req);
+
+            assertThat(res.id()).isEqualTo(10L);
+            verify(bookingRepository).save(booking);
+            assertThat(booking.getItems()).hasSize(1);
+            assertThat(booking.getItems().get(0).getPrice()).isEqualByComparingTo(BigDecimal.valueOf(200));
+        }
     }
-
 
     @Test
     void shouldThrowWhenDeleteNotFound() {
@@ -164,5 +172,4 @@ class BookingServiceImplTest {
 
         verify(bookingRepository).deleteById(5L);
     }
-
 }

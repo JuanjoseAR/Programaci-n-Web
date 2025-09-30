@@ -20,7 +20,6 @@ public class PassengerServicesImpl implements PassengerService {
 
     private final PassengerRepository passengerRepository;
     private final PassengerProfileRepository profileRepository;
-    private final PassengerMapper passengerMapper;
 
     @Override
     @Transactional
@@ -39,7 +38,7 @@ public class PassengerServicesImpl implements PassengerService {
         }
 
         passenger = passengerRepository.save(passenger);
-        return passengerMapper.toResponse(passenger);
+        return PassengerMapper.toResponse(passenger);
     }
 
     @Override
@@ -62,7 +61,7 @@ public class PassengerServicesImpl implements PassengerService {
         }
 
         passenger = passengerRepository.save(passenger);
-        return passengerMapper.toResponse(passenger);
+        return PassengerMapper.toResponse(passenger);
     }
 
     @Override
@@ -70,7 +69,7 @@ public class PassengerServicesImpl implements PassengerService {
     public PassengerResponse getByEmail(String email) {
         Passenger passenger = passengerRepository.fechtWhitProfileByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("Passenger not found with email: " + email));
-        return passengerMapper.toResponse(passenger);
+        return PassengerMapper.toResponse(passenger);
     }
 
     @Override
@@ -78,7 +77,7 @@ public class PassengerServicesImpl implements PassengerService {
     public PassengerResponse getById(Long id) {
         Passenger passenger = passengerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Passenger not found with id: " + id));
-        return passengerMapper.toResponse(passenger);
+        return PassengerMapper.toResponse(passenger);
     }
 
     @Override
@@ -93,6 +92,6 @@ public class PassengerServicesImpl implements PassengerService {
     @Transactional(readOnly = true)
     public Page<PassengerResponse> list(Pageable pageable) {
         return passengerRepository.findAll(pageable)
-                .map(passengerMapper::toResponse);
+                .map(PassengerMapper::toResponse);
     }
 }
