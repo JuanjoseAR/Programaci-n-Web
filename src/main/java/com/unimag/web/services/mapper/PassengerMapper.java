@@ -8,13 +8,21 @@ import org.springframework.stereotype.Component;
 public class PassengerMapper {
 
     public static PassengerDto.PassengerResponse toResponse(Passenger passenger) {
-        if (passenger == null) {
-            return null;
+        if (passenger == null) return null;
+
+        PassengerDto.PassengerProfileDto profileDto = null;
+        if (passenger.getProfile() != null) {
+            profileDto = new PassengerDto.PassengerProfileDto(
+                    passenger.getProfile().getPhone(),
+                    passenger.getProfile().getCountryCode()
+            );
         }
 
         return new PassengerDto.PassengerResponse(
+                passenger.getId(),
+                passenger.getFullName(),
                 passenger.getEmail(),
-                passenger
+                profileDto
         );
     }
 

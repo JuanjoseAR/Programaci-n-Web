@@ -9,21 +9,23 @@ public class PassengerDto {
     public record PassengerCreateRequest(
             String fullname,
             String email,
-            PassengerProfile profile
+            PassengerProfileDto profile
     ) implements Serializable{}
 
-    public record PassengerProfile(
-            Passenger passenger
+    public record PassengerProfileDto(
+            String phone, String countryCode
     ) implements Serializable{}
 
     public record PassengerUpdateRequest(
             String fullname,
             String email,
-            PassengerProfile profile
+            PassengerProfileDto profile
     ) implements Serializable{}
 
     public record PassengerResponse(
+            Long id,
+            String fullname,
             String email,
-            Passenger profile
+            PassengerProfileDto profile
     ) implements Serializable{}
 }
