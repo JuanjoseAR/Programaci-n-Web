@@ -1,31 +1,18 @@
 package com.unimag.web.services.mapper;
 
-import com.unimag.web.api.dto.AirportDto;
+import com.unimag.web.api.dto.AirportDto.*;
 import com.unimag.web.domain.Airport;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+
+@Mapper(componentModel = "spring")
+public interface AirportMapper {
 
 
-public class AirportMapper {
+    AirportResponse toResponse(Airport airport);
 
-    public static AirportDto.AirportResponse toResponse(Airport airport) {
-        if (airport == null) {
-            return null;
-        }
-        return new AirportDto.AirportResponse(
-                airport.getId(),
-                airport.getCode(),
-                airport.getName(),
-                airport.getCity()
-        );
-    }
 
-    public static Airport toEntity(AirportDto.AirportCreateRequest request) {
-        if (request == null) {
-            return null;
-        }
-        Airport airport = new Airport();
-        airport.setCode(request.code());
-        airport.setName(request.name());
-        airport.setCity(request.city());
-        return airport;
-    }
+    Airport toEntity(AirportCreateRequest request);
+
+    Airport toEntity(AirportUpdateRequest request);
 }

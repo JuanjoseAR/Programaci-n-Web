@@ -1,36 +1,21 @@
 package com.unimag.web.services.mapper;
 
-import com.unimag.web.api.dto.AirlineDto;
+import com.unimag.web.api.dto.AirlineDto.*;
 import com.unimag.web.domain.Airline;
-
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import java.util.Collections;
 
+@Mapper(componentModel = "spring", uses = { FlightMapper.class })
+public interface AirlineMapper {
 
-public class AirlineMapper {
 
-    public static AirlineDto.AirlineResponse toResponse(Airline airline) {
-        if (airline == null) {
-            return null;
-        }
+    @Mapping(source = "flights", target = "flights")
+    AirlineResponse toResponse(Airline airline);
 
-        return new AirlineDto.AirlineResponse(
-                airline.getId(),
-                airline.getCode(),
-                airline.getName(),
-                Collections.emptyList()
-        );
-    }
+    @Mapping(target = "flights", ignore = true)
+    Airline toEntity(AirlineCreateRequest request);
 
-    public static Airline toEntity(AirlineDto.AirlineCreateRequest request) {
-        if (request == null) {
-            return null;
-        }
-
-        Airline airline = new Airline();
-        airline.setCode(request.code());
-        airline.setName(request.name());
-        airline.setFlights(Collections.emptyList());
-
-        return airline;
-    }
+    @Mapping(target = "flights", ignore = true)
+    Airline toEntity(AirlineUpdateRequest request);
 }

@@ -31,6 +31,9 @@ class BookingItemServiceImplTest {
     BookingRepository bookingRepo;
     @Mock
     FlightRepository flightRepo;
+    @Mock
+    BookingMapper bookingMapper;
+
 
     @InjectMocks
     BookingItemServiceImpl service;
@@ -63,7 +66,7 @@ class BookingItemServiceImplTest {
         when(itemRepo.save(any())).thenReturn(item);
 
         try (MockedStatic<BookingMapper> mockedMapper = mockStatic(BookingMapper.class)) {
-            mockedMapper.when(() -> BookingMapper.toItemResponse(item)).thenReturn(response);
+            mockedMapper.when(() -> bookingMapper.toItemResponse(item)).thenReturn(response);
 
             var out = service.addItem(1L, req);
 
@@ -91,7 +94,7 @@ class BookingItemServiceImplTest {
         when(itemRepo.findByBookingIdOrderBySegmentOrderAsc(1L)).thenReturn(List.of(item));
 
         try (MockedStatic<BookingMapper> mockedMapper = mockStatic(BookingMapper.class)) {
-            mockedMapper.when(() -> BookingMapper.toItemResponse(item)).thenReturn(response);
+            mockedMapper.when(() -> bookingMapper.toItemResponse(item)).thenReturn(response);
 
             var list = service.listByBooking(1L);
 

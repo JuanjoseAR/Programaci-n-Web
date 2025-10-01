@@ -28,6 +28,7 @@ class BookingServiceImplTest {
     @Mock BookingRepository bookingRepository;
     @Mock PassengerRepository passengerRepository;
     @Mock FlightRepository flightRepository;
+    @Mock BookingMapper bookingMapper;
 
     @InjectMocks
     BookingServiceImpl service;
@@ -57,8 +58,8 @@ class BookingServiceImplTest {
         when(bookingRepository.save(any())).thenReturn(booking);
 
         try (MockedStatic<BookingMapper> mocked = mockStatic(BookingMapper.class)) {
-            mocked.when(() -> BookingMapper.toEntity(req)).thenReturn(booking);
-            mocked.when(() -> BookingMapper.toResponse(booking)).thenReturn(response);
+            mocked.when(() -> bookingMapper.toEntity(req)).thenReturn(booking);
+            mocked.when(() -> bookingMapper.toResponse(booking)).thenReturn(response);
 
             var res = service.create(req);
 
@@ -86,7 +87,7 @@ class BookingServiceImplTest {
         when(bookingRepository.findByIdWithDetails(7L)).thenReturn(Optional.of(booking));
 
         try (MockedStatic<BookingMapper> mocked = mockStatic(BookingMapper.class)) {
-            mocked.when(() -> BookingMapper.toResponse(booking)).thenReturn(response);
+            mocked.when(() -> bookingMapper.toResponse(booking)).thenReturn(response);
 
             var res = service.findById(7L);
 
@@ -111,7 +112,7 @@ class BookingServiceImplTest {
         when(bookingRepository.findAll(PageRequest.of(0, 5))).thenReturn(page);
 
         try (MockedStatic<BookingMapper> mocked = mockStatic(BookingMapper.class)) {
-            mocked.when(() -> BookingMapper.toResponse(booking)).thenReturn(response);
+            mocked.when(() -> bookingMapper.toResponse(booking)).thenReturn(response);
 
             var result = service.findAll(PageRequest.of(0, 5));
 
@@ -119,7 +120,6 @@ class BookingServiceImplTest {
             assertThat(result.getContent().get(0).id()).isEqualTo(5L);
         }
     }
-
     @Test
     void shouldUpdateBookingReplacingItems() {
         var passenger = Passenger.builder().id(1L).email("p@test.com").build();
@@ -130,9 +130,16 @@ class BookingServiceImplTest {
                 .items(new java.util.ArrayList<>())
                 .build();
 
-        var req = new BookingCreateRequest(1L, List.of(
-                new BookingItemCreateRequest("BUSINESS", "200.00", 1, 2L)
-        ));
+        var itemRequest = new BookingItemCreateRequest("BUSINESS", "200.00", 1, 2L);
+        var req = new BookingCreateRequest(1L, List.of(itemRequest));
+
+        var bookingItem = BookingItem.builder()
+                .cabin(Cabin.BUSINESS)
+                .price(new BigDecimal("200.00"))
+                .segmentOrder(1)
+                .flight(flight)
+                .build();
+
         var response = new BookingResponse(10L, OffsetDateTime.now(),
                 new PassengerDto.PassengerResponse(1L, "Juan", "p@test.com", null),
                 List.of()
@@ -141,20 +148,29 @@ class BookingServiceImplTest {
         when(bookingRepository.findByIdWithDetails(10L)).thenReturn(Optional.of(booking));
         when(passengerRepository.findById(1L)).thenReturn(Optional.of(passenger));
         when(flightRepository.findById(2L)).thenReturn(Optional.of(flight));
-        when(bookingRepository.save(any())).thenReturn(booking);
 
-        try (MockedStatic<BookingMapper> mocked = mockStatic(BookingMapper.class)) {
-            mocked.when(() -> BookingMapper.toResponse(booking)).thenReturn(response);
 
-            var res = service.update(10L, req);
+        when(bookingMapper.toItemEntity(itemRequest)).thenReturn(bookingItem);
 
-            assertThat(res.id()).isEqualTo(10L);
-            verify(bookingRepository).save(booking);
-            assertThat(booking.getItems()).hasSize(1);
-            assertThat(booking.getItems().get(0).getPrice()).isEqualByComparingTo(BigDecimal.valueOf(200));
-        }
+        when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
+        when(bookingMapper.toResponse(booking)).thenReturn(response);
+
+        var res = service.update(10L, req);
+
+        assertThat(res.id()).isEqualTo(10L);
+        assertThat(booking.getItems()).hasSize(1);
+        assertThat(booking.getItems().get(0).getPrice()).isEqualByComparingTo(new BigDecimal("200.00"));
+        assertThat(booking.getItems().get(0).getFlight()).isEqualTo(flight);
+        assertThat(booking.getItems().get(0).getCabin()).isEqualTo(Cabin.BUSINESS);
+        assertThat(booking.getItems().get(0).getSegmentOrder()).isEqualTo(1);
+
+        verify(bookingRepository).findByIdWithDetails(10L);
+        verify(passengerRepository).findById(1L);
+        verify(flightRepository).findById(2L);
+        verify(bookingMapper).toItemEntity(itemRequest);
+        verify(bookingRepository).save(booking);
+        verify(bookingMapper).toResponse(booking);
     }
-
     @Test
     void shouldThrowWhenDeleteNotFound() {
         when(bookingRepository.existsById(99L)).thenReturn(false);

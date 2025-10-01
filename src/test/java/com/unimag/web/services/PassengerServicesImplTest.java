@@ -25,6 +25,7 @@ class PassengerServicesImplTest {
 
     @Mock PassengerRepository passengerRepository;
     @Mock PassengerProfileRepository profileRepository;
+    @Mock PassengerMapper passengerMapper;
 
     @InjectMocks
     PassengerServicesImpl service;
@@ -33,27 +34,51 @@ class PassengerServicesImplTest {
         var profileDto = new PassengerProfileDto("3001234567", "+57");
         var req = new PassengerCreateRequest("Juan", "juan@test.com", profileDto);
 
-        var profile = PassengerProfile.builder()
-                .phone("3001234567").countryCode("+57").build();
-        var passenger = Passenger.builder()
-                .id(10L).fullName("Juan").email("juan@test.com").profile(profile).build();
+        var profileFromMapper = PassengerProfile.builder()
+                .phone("3001234567")
+                .countryCode("+57")
+                .build();
+
+        var profileSaved = PassengerProfile.builder()
+                .id(1L)
+                .phone("3001234567")
+                .countryCode("+57")
+                .build();
+
+        var passengerFromMapper = Passenger.builder()
+                .id(10L)
+                .fullName("Juan")
+                .email("juan@test.com")
+                .build();
+
+        var passengerSaved = Passenger.builder()
+                .id(10L)
+                .fullName("Juan")
+                .email("juan@test.com")
+                .profile(profileSaved)
+                .build();
+
         var response = new PassengerResponse(10L, "Juan", "juan@test.com", profileDto);
 
-        when(profileRepository.save(any())).thenReturn(profile);
-        when(passengerRepository.save(any())).thenReturn(passenger);
+        when(passengerMapper.toEntity(profileDto)).thenReturn(profileFromMapper);
 
-        try (MockedStatic<PassengerMapper> mocked = mockStatic(PassengerMapper.class)) {
-            mocked.when(() -> PassengerMapper.toResponse(any()))
-                    .thenReturn(response);
+        when(passengerMapper.toEntity(req)).thenReturn(passengerFromMapper);
+        when(profileRepository.save(any(PassengerProfile.class))).thenReturn(profileSaved);
+        when(passengerRepository.save(any(Passenger.class))).thenReturn(passengerSaved);
+        when(passengerMapper.toResponse(passengerSaved)).thenReturn(response);
 
-            var res = service.createPassenger(req);
+        var res = service.createPassenger(req);
 
-            assertThat(res.id()).isEqualTo(10L);
-            assertThat(res.email()).isEqualTo("juan@test.com");
-            verify(passengerRepository).save(any(Passenger.class));
-            verify(profileRepository).save(any(PassengerProfile.class));
-        }
+        assertThat(res.id()).isEqualTo(10L);
+        assertThat(res.email()).isEqualTo("juan@test.com");
+
+        verify(passengerMapper).toEntity(profileDto);
+        verify(profileRepository).save(any(PassengerProfile.class));
+        verify(passengerRepository).save(any(Passenger.class));
+        verify(passengerMapper).toEntity(req);
+        verify(passengerMapper).toResponse(passengerSaved);
     }
+
 
 
     @Test
@@ -84,7 +109,7 @@ class PassengerServicesImplTest {
         when(passengerRepository.save(any())).thenReturn(passenger);
 
         try (MockedStatic<PassengerMapper> mocked = mockStatic(PassengerMapper.class)) {
-            mocked.when(() -> PassengerMapper.toResponse(any()))
+            mocked.when(() -> passengerMapper.toResponse(any()))
                     .thenReturn(updatedResponse);
 
             var res = service.updatePassenger(req);
@@ -125,7 +150,7 @@ class PassengerServicesImplTest {
                 .thenReturn(Optional.of(passenger));
 
         try (MockedStatic<PassengerMapper> mocked = mockStatic(PassengerMapper.class)) {
-            mocked.when(() -> PassengerMapper.toResponse(passenger))
+            mocked.when(() -> passengerMapper.toResponse(passenger))
                     .thenReturn(response);
 
             var res = service.getByEmail("ana@test.com");
@@ -163,7 +188,7 @@ class PassengerServicesImplTest {
                 .thenReturn(Optional.of(passenger));
 
         try (MockedStatic<PassengerMapper> mocked = mockStatic(PassengerMapper.class)) {
-            mocked.when(() -> PassengerMapper.toResponse(passenger))
+            mocked.when(() -> passengerMapper.toResponse(passenger))
                     .thenReturn(response);
 
             var res = service.getById(3L);
@@ -213,7 +238,7 @@ class PassengerServicesImplTest {
                 .thenReturn(page);
 
         try (MockedStatic<PassengerMapper> mocked = mockStatic(PassengerMapper.class)) {
-            mocked.when(() -> PassengerMapper.toResponse(passenger))
+            mocked.when(() -> passengerMapper.toResponse(passenger))
                     .thenReturn(response);
 
             var result = service.list(PageRequest.of(0, 5));

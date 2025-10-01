@@ -17,17 +17,18 @@ import java.util.List;
 public class TagServiceImpl implements TagService {
 
     private final TagRepository tagRepository;
+    private final TagMapper tagMapper;
 
     @Override
     public TagDto.TagResponse create(TagDto.TagCreateRequest request) {
-        return TagMapper.toResponse(tagRepository.save(TagMapper.toEntity(request)));
+        return tagMapper.toResponse(tagRepository.save(tagMapper.toEntity(request)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public TagDto.TagResponse findById(Long id) {
         return tagRepository.findById(id)
-                .map(TagMapper::toResponse)
+                .map(tagMapper::toResponse)
                 .orElseThrow(() -> new NotFoundException("Tag con id " + id + " no encontrado."));
     }
 
@@ -35,7 +36,7 @@ public class TagServiceImpl implements TagService {
     @Transactional(readOnly = true)
     public List<TagDto.TagResponse> findAll() {
         return tagRepository.findAll().stream()
-                .map(TagMapper::toResponse)
+                .map(tagMapper::toResponse)
                 .toList();
     }
 

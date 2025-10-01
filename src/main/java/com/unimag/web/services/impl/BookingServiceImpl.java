@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -28,34 +27,36 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final PassengerRepository passengerRepository;
     private final FlightRepository flightRepository;
+    private final BookingMapper bookingMapper;
 
     @Override
     public BookingResponse create(BookingCreateRequest request) {
         Passenger passenger = passengerRepository.findById(request.passengerId())
                 .orElseThrow(() -> new NotFoundException("Passenger not found with id " + request.passengerId()));
 
-        Booking booking = BookingMapper.toEntity(request);
+        Booking booking = bookingMapper.toEntity(request);
         booking.setCreatedAt(OffsetDateTime.now());
         booking.setPassenger(passenger);
-
 
         validateFlights(booking.getItems());
 
         Booking saved = bookingRepository.save(booking);
-        return BookingMapper.toResponse(saved);
+        return bookingMapper.toResponse(saved);
     }
 
-    @Override @Transactional(readOnly = true)
+    @Override
+    @Transactional(readOnly = true)
     public BookingResponse findById(Long id) {
         Booking booking = bookingRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("Booking not found with id " + id));
-        return BookingMapper.toResponse(booking);
+        return bookingMapper.toResponse(booking);
     }
 
-    @Override @Transactional(readOnly = true)
+    @Override
+    @Transactional(readOnly = true)
     public Page<BookingResponse> findAll(Pageable pageable) {
         return bookingRepository.findAll(pageable)
-                .map(BookingMapper::toResponse);
+                .map(bookingMapper::toResponse);
     }
 
     @Override
@@ -70,24 +71,14 @@ public class BookingServiceImpl implements BookingService {
 
         booking.getItems().clear();
         List<BookingItem> newItems = request.items().stream()
-                .map(itemDto -> {
-                    BookingItem item = new BookingItem();
-                    item.setCabin(Enum.valueOf(com.unimag.web.domain.Cabin.class, itemDto.cabin()));
-                    item.setPrice(new java.math.BigDecimal(itemDto.price()));
-                    item.setSegmentOrder(itemDto.segmentOrder());
-
-                    Flight flight = flightRepository.findById(itemDto.flightId())
-                            .orElseThrow(() -> new NotFoundException("Flight not found with id " + itemDto.flightId()));
-                    item.setFlight(flight);
-
-                    item.setBooking(booking);
-                    return item;
-                })
+                .map(bookingMapper::toItemEntity)
+                .peek(item -> item.setBooking(booking))
                 .toList();
+
         booking.getItems().addAll(newItems);
 
         Booking updated = bookingRepository.save(booking);
-        return BookingMapper.toResponse(updated);
+        return bookingMapper.toResponse(updated);
     }
 
     @Override
@@ -106,3 +97,4 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 }
+

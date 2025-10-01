@@ -1,88 +1,59 @@
 package com.unimag.web.services.mapper;
 
-import com.unimag.web.domain.*;
-import com.unimag.web.api.dto.*;
+import com.unimag.web.api.dto.BookingDto.*;
+import com.unimag.web.domain.Booking;
+import com.unimag.web.domain.BookingItem;
+import com.unimag.web.domain.Cabin;
+import com.unimag.web.domain.Flight;
+import org.mapstruct.*;
 
 import java.math.BigDecimal;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
+
+@Mapper(
+        componentModel = "spring",
+        uses = { PassengerMapper.class, FlightMapper.class }
+)
+public interface BookingMapper {
 
 
-public class BookingMapper {
+    @Mapping(source = "passenger", target = "passenger")
+    BookingResponse toResponse(Booking booking);
 
-    public static BookingDto.BookingResponse toResponse(Booking booking) {
-        if (booking == null) {
-            return null;
-        }
+    @Mapping(source = "flight", target = "flight")
+    @Mapping(source = "cabin", target = "cabin")
+    @Mapping(source = "price", target = "price")
+    BookingItemResponse toItemResponse(BookingItem item);
 
-        PassengerDto.PassengerResponse passengerResponse = PassengerMapper.toResponse(booking.getPassenger());
-        List<BookingDto.BookingItemResponse> itemsResponse = (booking.getItems() != null)
-                ? booking.getItems().stream().map(BookingMapper::toItemResponse).collect(Collectors.toList())
-                : Collections.emptyList();
 
-        return new BookingDto.BookingResponse(
-                booking.getId(),
-                booking.getCreatedAt(),
-                passengerResponse,
-                itemsResponse
-        );
+    @Mapping(source = "passengerId", target = "passenger.id")
+    Booking toEntity(BookingCreateRequest request);
+
+    @Mapping(source = "flightId", target = "flight.id")
+    @Mapping(source = "cabin", target = "cabin")
+    @Mapping(source = "price", target = "price")
+    BookingItem toItemEntity(BookingItemCreateRequest item);
+
+
+    default String map(BigDecimal value) {
+        return value != null ? value.toString() : null;
     }
 
-    public static BookingDto.BookingItemResponse toItemResponse(BookingItem item) {
-        if (item == null) {
-            return null;
-        }
-
-        FlightDto.FlightResponse flightResponse = FlightMapper.toResponse(item.getFlight());
-
-        return new BookingDto.BookingItemResponse(
-                item.getId(),
-                item.getCabin().name(),
-                item.getPrice().toString(),
-                item.getSegmentOrder(),
-                flightResponse
-        );
+    default BigDecimal map(String value) {
+        return value != null ? new BigDecimal(value) : null;
     }
 
-    public static Booking toEntity(BookingDto.BookingCreateRequest request) {
-        if (request == null) {
-            return null;
-        }
-
-        Booking booking = new Booking();
-        Passenger passenger = new Passenger();
-        passenger.setId(request.passengerId());
-        booking.setPassenger(passenger);
-
-        if (request.items() != null) {
-            List<BookingItem> items = request.items().stream()
-                    .map(itemDto -> toItemEntity(itemDto, booking))
-                    .collect(Collectors.toList());
-            booking.setItems(items);
-        } else {
-            booking.setItems(Collections.emptyList());
-        }
-
-        return booking;
+    default String map(Cabin cabin) {
+        return cabin != null ? cabin.name() : null;
     }
 
-    private static BookingItem toItemEntity(BookingDto.BookingItemCreateRequest itemRequest, Booking booking) {
-        if (itemRequest == null) {
-            return null;
-        }
+    default Cabin mapCabin(String cabin) {
+        return cabin != null ? Cabin.valueOf(cabin) : null;
+    }
 
-        BookingItem item = new BookingItem();
-        item.setCabin(Cabin.valueOf(itemRequest.cabin()));
-        item.setPrice(new BigDecimal(itemRequest.price()));
-        item.setSegmentOrder(itemRequest.segmentOrder());
-
+    default Flight mapFlight(Long flightId) {
+        if (flightId == null) return null;
         Flight flight = new Flight();
-        flight.setId(itemRequest.flightId());
-        item.setFlight(flight);
-
-        item.setBooking(booking);
-
-        return item;
+        flight.setId(flightId);
+        return flight;
     }
 }

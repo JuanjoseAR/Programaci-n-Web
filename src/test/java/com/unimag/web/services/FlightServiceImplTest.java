@@ -34,6 +34,8 @@ class FlightServiceImplTest {
     AirportRepository airportRepo;
     @Mock
     TagRepository tagRepo;
+    @Mock
+    FlightMapper flightMapper;
 
     @InjectMocks
     FlightServiceImpl service;
@@ -53,8 +55,8 @@ class FlightServiceImplTest {
         when(flightRepo.save(entity)).thenReturn(entity);
 
         try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
-            mocked.when(() -> FlightMapper.toEntity(request)).thenReturn(entity);
-            mocked.when(() -> FlightMapper.toResponse(entity)).thenReturn(response);
+            mocked.when(() -> flightMapper.toEntity(request)).thenReturn(entity);
+            mocked.when(() -> flightMapper.toResponse(entity)).thenReturn(response);
 
             var result = service.create(request);
 
@@ -94,7 +96,7 @@ class FlightServiceImplTest {
         when(flightRepo.findById(5L)).thenReturn(Optional.of(flight));
 
         try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
-            mocked.when(() -> FlightMapper.toResponse(flight))
+            mocked.when(() -> flightMapper.toResponse(flight))
                     .thenReturn(response);
 
             var result = service.get(5L);
@@ -110,7 +112,6 @@ class FlightServiceImplTest {
         var flight = new Flight();
         flight.setId(1L);
 
-        var page = new PageImpl<>(List.of(flight));
         var response = new FlightResponse(
                 1L,
                 "XY1",
@@ -120,22 +121,20 @@ class FlightServiceImplTest {
                 Set.of()
         );
 
-        when(flightRepo.findByAirlineName(eq("LATAM"), any())).thenReturn(page);
+        var page = new PageImpl<>(List.of(flight));
 
-        try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
-            mocked.when(() -> FlightMapper.toResponse(flight)).thenReturn(response);
+        when(flightRepo.findByAirlineName(eq("LATAM"), any(Pageable.class))).thenReturn(page);
+        when(flightMapper.toResponse(flight)).thenReturn(response);
 
-            var result = service.listByAirline("LATAM", PageRequest.of(0, 10));
+        var result = service.listByAirline("LATAM", PageRequest.of(0, 10));
 
-            assertThat(result).hasSize(1);
-            assertThat(result.getContent().get(0).id()).isEqualTo(1L);
-            assertThat(result.getContent().get(0).number()).isEqualTo("XY1");
+        assertThat(result).hasSize(1);
+        assertThat(result.getContent().get(0).id()).isEqualTo(1L);
+        assertThat(result.getContent().get(0).number()).isEqualTo("XY1");
 
-            // opcional: verificar que el mapper fue invocado
-            mocked.verify(() -> FlightMapper.toResponse(flight));
-        }
+        verify(flightRepo).findByAirlineName(eq("LATAM"), any(Pageable.class));
+        verify(flightMapper).toResponse(flight);
     }
-
 
     @Test
     void shouldSearchFlightsBetweenDates() {
@@ -152,7 +151,7 @@ class FlightServiceImplTest {
         )).thenReturn(page);
 
         try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
-            mocked.when(() -> FlightMapper.toResponse(flight)).thenReturn(response);
+            mocked.when(() -> flightMapper.toResponse(flight)).thenReturn(response);
 
             var result = service.search(
                     "BOG", "MIA",
@@ -186,7 +185,7 @@ class FlightServiceImplTest {
                 .thenReturn(List.of(flight));
 
         try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
-            mocked.when(() -> FlightMapper.toResponse(flight))
+            mocked.when(() -> flightMapper.toResponse(flight))
                     .thenReturn(response);
 
             var result = service.searchWithTags(List.of("Promo"));
@@ -226,7 +225,7 @@ class FlightServiceImplTest {
         when(tagRepo.findById(30L)).thenReturn(Optional.of(tag));
 
         try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
-            mocked.when(() -> FlightMapper.toResponse(flight))
+            mocked.when(() -> flightMapper.toResponse(flight))
                     .thenReturn(response);
 
             var result = service.addTag(20L, 30L);
@@ -237,6 +236,7 @@ class FlightServiceImplTest {
             verify(tagRepo).findById(30L);
         }
     }
+
     @Test
     void shouldRemoveTagFromFlight() {
         var tag = new Tag();
@@ -259,21 +259,24 @@ class FlightServiceImplTest {
 
         when(flightRepo.findById(21L)).thenReturn(Optional.of(flight));
         when(tagRepo.findById(40L)).thenReturn(Optional.of(tag));
+        when(flightMapper.toResponse(flight)).thenReturn(response);
 
-        try (MockedStatic<FlightMapper> mocked = mockStatic(FlightMapper.class)) {
-            mocked.when(() -> FlightMapper.toResponse(flight)).thenReturn(response);
+        var result = service.removeTag(21L, 40L);
 
-            var result = service.removeTag(21L, 40L);
+        assertThat(flight.getTags())
+                .extracting(Tag::getId)
+                .doesNotContain(40L);
 
-            assertThat(flight.getTags())
-                    .extracting(Tag::getId)
-                    .doesNotContain(40L);
-            assertThat(result.id()).isEqualTo(21L);
+        assertThat(tag.getFlights())
+                .extracting(Flight::getId)
+                .doesNotContain(21L);
 
-            mocked.verify(() -> FlightMapper.toResponse(flight));
-        }
+        assertThat(result.id()).isEqualTo(21L);
+
+        verify(flightRepo).findById(21L);
+        verify(tagRepo).findById(40L);
+        verify(flightMapper).toResponse(flight);
     }
-
 
     @Test
     void shouldDeleteFlight() {

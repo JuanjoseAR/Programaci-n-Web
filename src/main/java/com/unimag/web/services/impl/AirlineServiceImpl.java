@@ -17,17 +17,18 @@ import java.util.List;
 public class AirlineServiceImpl implements AirlineService {
 
     private final AirlineRepository airlineRepository;
+    private final AirlineMapper airlineMapper;
 
     @Override
     public AirlineDto.AirlineResponse create(AirlineDto.AirlineCreateRequest request) {
-        return AirlineMapper.toResponse(airlineRepository.save(AirlineMapper.toEntity(request)));
+        return airlineMapper.toResponse(airlineRepository.save(airlineMapper.toEntity(request)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public AirlineDto.AirlineResponse findById(Long id) {
         return airlineRepository.findById(id)
-                .map(AirlineMapper::toResponse)
+                .map(airlineMapper::toResponse)
                 .orElseThrow(() -> new NotFoundException("Airline con id " + id + " no encontrada."));
     }
 
@@ -35,7 +36,7 @@ public class AirlineServiceImpl implements AirlineService {
     @Transactional(readOnly = true)
     public List<AirlineDto.AirlineResponse> findAll() {
         return airlineRepository.findAll().stream()
-                .map(AirlineMapper::toResponse)
+                .map(airlineMapper::toResponse)
                 .toList();
     }
 

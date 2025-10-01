@@ -1,40 +1,28 @@
 package com.unimag.web.services.mapper;
 
+import com.unimag.web.api.dto.PassengerDto.*;
 import com.unimag.web.domain.Passenger;
-import com.unimag.web.api.dto.PassengerDto;
-import org.springframework.stereotype.Component;
+import com.unimag.web.domain.PassengerProfile;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class PassengerMapper {
+@Mapper(componentModel = "spring")
+public interface PassengerMapper {
 
-    public static PassengerDto.PassengerResponse toResponse(Passenger passenger) {
-        if (passenger == null) return null;
 
-        PassengerDto.PassengerProfileDto profileDto = null;
-        if (passenger.getProfile() != null) {
-            profileDto = new PassengerDto.PassengerProfileDto(
-                    passenger.getProfile().getPhone(),
-                    passenger.getProfile().getCountryCode()
-            );
-        }
+    @Mapping(source = "fullName", target = "fullname")
+    PassengerResponse toResponse(Passenger passenger);
 
-        return new PassengerDto.PassengerResponse(
-                passenger.getId(),
-                passenger.getFullName(),
-                passenger.getEmail(),
-                profileDto
-        );
-    }
 
-    public static Passenger toEntity(PassengerDto.PassengerCreateRequest request) {
-        if (request == null) {
-            return null;
-        }
+    @Mapping(source = "fullname", target = "fullName")
+    Passenger toEntity(PassengerCreateRequest request);
 
-        Passenger passenger = new Passenger();
-        passenger.setFullName(request.fullname());
-        passenger.setEmail(request.email());
 
-        return passenger;
-    }
+    @Mapping(source = "fullname", target = "fullName")
+    Passenger toEntity(PassengerUpdateRequest request);
+
+
+    PassengerProfileDto toDto(PassengerProfile profile);
+
+    PassengerProfile toEntity(PassengerProfileDto profileDto);
 }
