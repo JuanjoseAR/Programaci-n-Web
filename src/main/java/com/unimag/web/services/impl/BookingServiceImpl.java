@@ -1,0 +1,108 @@
+package com.unimag.web.services.impl;
+
+import com.unimag.web.api.dto.BookingDto.*;
+import com.unimag.web.domain.Booking;
+import com.unimag.web.domain.BookingItem;
+import com.unimag.web.domain.Flight;
+import com.unimag.web.domain.Passenger;
+import com.unimag.web.exception.NotFoundException;
+import com.unimag.web.repositories.BookingRepository;
+import com.unimag.web.repositories.FlightRepository;
+import com.unimag.web.repositories.PassengerRepository;
+import com.unimag.web.services.BookingService;
+import com.unimag.web.services.mapper.BookingMapper;
+import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.time.OffsetDateTime;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class BookingServiceImpl implements BookingService {
+
+    private final BookingRepository bookingRepository;
+    private final PassengerRepository passengerRepository;
+    private final FlightRepository flightRepository;
+
+    @Override
+    public BookingResponse create(BookingCreateRequest request) {
+        Passenger passenger = passengerRepository.findById(request.passengerId())
+                .orElseThrow(() -> new NotFoundException("Passenger not found with id " + request.passengerId()));
+
+        Booking booking = BookingMapper.toEntity(request);
+        booking.setCreatedAt(OffsetDateTime.now());
+        booking.setPassenger(passenger);
+
+
+        validateFlights(booking.getItems());
+
+        Booking saved = bookingRepository.save(booking);
+        return BookingMapper.toResponse(saved);
+    }
+
+    @Override @Transactional(readOnly = true)
+    public BookingResponse findById(Long id) {
+        Booking booking = bookingRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new NotFoundException("Booking not found with id " + id));
+        return BookingMapper.toResponse(booking);
+    }
+
+    @Override @Transactional(readOnly = true)
+    public Page<BookingResponse> findAll(Pageable pageable) {
+        return bookingRepository.findAll(pageable)
+                .map(BookingMapper::toResponse);
+    }
+
+    @Override
+    public BookingResponse update(Long id, BookingCreateRequest request) {
+        Booking booking = bookingRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new NotFoundException("Booking not found with id " + id));
+
+        Passenger passenger = passengerRepository.findById(request.passengerId())
+                .orElseThrow(() -> new NotFoundException("Passenger not found with id " + request.passengerId()));
+
+        booking.setPassenger(passenger);
+
+        booking.getItems().clear();
+        List<BookingItem> newItems = request.items().stream()
+                .map(itemDto -> {
+                    BookingItem item = new BookingItem();
+                    item.setCabin(Enum.valueOf(com.unimag.web.domain.Cabin.class, itemDto.cabin()));
+                    item.setPrice(new java.math.BigDecimal(itemDto.price()));
+                    item.setSegmentOrder(itemDto.segmentOrder());
+
+                    Flight flight = flightRepository.findById(itemDto.flightId())
+                            .orElseThrow(() -> new NotFoundException("Flight not found with id " + itemDto.flightId()));
+                    item.setFlight(flight);
+
+                    item.setBooking(booking);
+                    return item;
+                })
+                .toList();
+        booking.getItems().addAll(newItems);
+
+        Booking updated = bookingRepository.save(booking);
+        return BookingMapper.toResponse(updated);
+    }
+
+    @Override
+    public void delete(Long id) {
+        if (!bookingRepository.existsById(id)) {
+            throw new NotFoundException("Booking not found with id " + id);
+        }
+        bookingRepository.deleteById(id);
+    }
+
+    private void validateFlights(List<BookingItem> items) {
+        for (BookingItem item : items) {
+            Long flightId = item.getFlight().getId();
+            flightRepository.findById(flightId)
+                    .orElseThrow(() -> new NotFoundException("Flight not found with id " + flightId));
+        }
+    }
+}

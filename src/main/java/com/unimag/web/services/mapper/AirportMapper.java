@@ -1,13 +1,12 @@
-package com.unimag.web.mapper;
+package com.unimag.web.services.mapper;
 
-import com.unimag.web.domain.Airport;
 import com.unimag.web.api.dto.AirportDto;
-import org.springframework.stereotype.Component;
+import com.unimag.web.domain.Airport;
 
-@Component
+
 public class AirportMapper {
 
-    public AirportDto.AirportResponse toResponse(Airport airport) {
+    public static AirportDto.AirportResponse toResponse(Airport airport) {
         if (airport == null) {
             return null;
         }
@@ -19,7 +18,7 @@ public class AirportMapper {
         );
     }
 
-    public Airport toEntity(AirportDto.AirportCreateRequest request) {
+    public static Airport toEntity(AirportDto.AirportCreateRequest request) {
         if (request == null) {
             return null;
         }

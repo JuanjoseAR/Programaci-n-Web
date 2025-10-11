@@ -1,15 +1,14 @@
-package com.unimag.web.mapper;
+package com.unimag.web.services.mapper;
 
-import com.unimag.web.domain.Airline;
 import com.unimag.web.api.dto.AirlineDto;
-import org.springframework.stereotype.Component;
+import com.unimag.web.domain.Airline;
 
 import java.util.Collections;
 
-@Component
+
 public class AirlineMapper {
 
-    public AirlineDto.AirlineResponse toResponse(Airline airline) {
+    public static AirlineDto.AirlineResponse toResponse(Airline airline) {
         if (airline == null) {
             return null;
         }
@@ -22,7 +21,7 @@ public class AirlineMapper {
         );
     }
 
-    public Airline toEntity(AirlineDto.AirlineCreateRequest request) {
+    public static Airline toEntity(AirlineDto.AirlineCreateRequest request) {
         if (request == null) {
             return null;
         }

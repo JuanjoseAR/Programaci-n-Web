@@ -1,13 +1,12 @@
-package com.unimag.web.mapper;
+package com.unimag.web.services.mapper;
 
-import com.unimag.web.domain.Tag;
 import com.unimag.web.api.dto.TagDto;
-import org.springframework.stereotype.Component;
+import com.unimag.web.domain.Tag;
 
-@Component
+
 public class TagMapper {
 
-    public TagDto.TagResponse toResponse(Tag tag) {
+    public static TagDto.TagResponse toResponse(Tag tag) {
         if (tag == null) {
             return null;
         }
@@ -17,7 +16,7 @@ public class TagMapper {
         );
     }
 
-    public Tag toEntity(TagDto.TagCreateRequest request) {
+    public static Tag toEntity(TagDto.TagCreateRequest request) {
         if (request == null) {
             return null;
         }
