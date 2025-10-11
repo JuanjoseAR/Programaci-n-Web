@@ -26,6 +26,7 @@ public class BookingItemServiceImpl implements BookingItemService {
     private final BookingItemRepository itemRepo;
     private final BookingRepository bookingRepo;
     private final FlightRepository flightRepo;
+    private final BookingMapper bookingMapper;
 
     @Override
     public BookingItemResponse addItem(Long bookingId, BookingItemCreateRequest req) {
@@ -43,7 +44,7 @@ public class BookingItemServiceImpl implements BookingItemService {
                 .segmentOrder(req.segmentOrder())
                 .build();
 
-        return BookingMapper.toItemResponse(itemRepo.save(item));
+        return bookingMapper.toItemResponse(itemRepo.save(item));
     }
 
     @Override
@@ -54,7 +55,7 @@ public class BookingItemServiceImpl implements BookingItemService {
 
         return itemRepo.findByBookingIdOrderBySegmentOrderAsc(booking.getId())
                 .stream()
-                .map(BookingMapper::toItemResponse)
+                .map(bookingMapper::toItemResponse)
                 .toList();
     }
 

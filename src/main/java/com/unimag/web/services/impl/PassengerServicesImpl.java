@@ -20,25 +20,21 @@ public class PassengerServicesImpl implements PassengerService {
 
     private final PassengerRepository passengerRepository;
     private final PassengerProfileRepository profileRepository;
+    private final PassengerMapper passengerMapper;
 
     @Override
     @Transactional
     public PassengerResponse createPassenger(PassengerCreateRequest request) {
-        Passenger passenger = new Passenger();
-        passenger.setFullName(request.fullname());
-        passenger.setEmail(request.email());
+        Passenger passenger = passengerMapper.toEntity(request);
 
         if (request.profile() != null) {
-            PassengerProfile profile = PassengerProfile.builder()
-                    .phone(request.profile().phone())
-                    .countryCode(request.profile().countryCode())
-                    .build();
+            PassengerProfile profile = passengerMapper.toEntity(request.profile());
             profileRepository.save(profile);
             passenger.setProfile(profile);
         }
 
         passenger = passengerRepository.save(passenger);
-        return PassengerMapper.toResponse(passenger);
+        return passengerMapper.toResponse(passenger);
     }
 
     @Override
@@ -61,7 +57,7 @@ public class PassengerServicesImpl implements PassengerService {
         }
 
         passenger = passengerRepository.save(passenger);
-        return PassengerMapper.toResponse(passenger);
+        return passengerMapper.toResponse(passenger);
     }
 
     @Override
@@ -69,7 +65,7 @@ public class PassengerServicesImpl implements PassengerService {
     public PassengerResponse getByEmail(String email) {
         Passenger passenger = passengerRepository.fechtWhitProfileByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("Passenger not found with email: " + email));
-        return PassengerMapper.toResponse(passenger);
+        return passengerMapper.toResponse(passenger);
     }
 
     @Override
@@ -77,7 +73,7 @@ public class PassengerServicesImpl implements PassengerService {
     public PassengerResponse getById(Long id) {
         Passenger passenger = passengerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Passenger not found with id: " + id));
-        return PassengerMapper.toResponse(passenger);
+        return passengerMapper.toResponse(passenger);
     }
 
     @Override
@@ -92,6 +88,7 @@ public class PassengerServicesImpl implements PassengerService {
     @Transactional(readOnly = true)
     public Page<PassengerResponse> list(Pageable pageable) {
         return passengerRepository.findAll(pageable)
-                .map(PassengerMapper::toResponse);
+                .map(passengerMapper::toResponse);
     }
 }
+

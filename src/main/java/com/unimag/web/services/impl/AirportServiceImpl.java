@@ -16,17 +16,18 @@ import java.util.List;
 public class AirportServiceImpl implements AirportService {
 
     private final AirportRepository airportRepository;
+    private final AirportMapper airportMapper;
 
     @Override
     public AirportDto.AirportResponse create(AirportDto.AirportCreateRequest request) {
-        return AirportMapper.toResponse(airportRepository.save(AirportMapper.toEntity(request)));
+        return airportMapper.toResponse(airportRepository.save(airportMapper.toEntity(request)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public AirportDto.AirportResponse findById(Long id) {
         return airportRepository.findById(id)
-                .map(AirportMapper::toResponse)
+                .map(airportMapper::toResponse)
                 .orElseThrow(() -> new NotFoundException("Airport con id " + id + " no encontrado."));
     }
 
@@ -34,7 +35,7 @@ public class AirportServiceImpl implements AirportService {
     @Transactional(readOnly = true)
     public List<AirportDto.AirportResponse> findAll() {
         return airportRepository.findAll().stream()
-                .map(AirportMapper::toResponse)
+                .map(airportMapper::toResponse)
                 .toList();
     }
 

@@ -1,27 +1,15 @@
 package com.unimag.web.services.mapper;
 
-import com.unimag.web.api.dto.TagDto;
+import com.unimag.web.api.dto.TagDto.*;
 import com.unimag.web.domain.Tag;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+
+@Mapper(componentModel = "spring")
+public interface TagMapper {
 
 
-public class TagMapper {
+    TagResponse toResponse(Tag tag);
 
-    public static TagDto.TagResponse toResponse(Tag tag) {
-        if (tag == null) {
-            return null;
-        }
-        return new TagDto.TagResponse(
-                tag.getId(),
-                tag.getName()
-        );
-    }
-
-    public static Tag toEntity(TagDto.TagCreateRequest request) {
-        if (request == null) {
-            return null;
-        }
-        Tag tag = new Tag();
-        tag.setName(request.name());
-        return tag;
-    }
+    Tag toEntity(TagCreateRequest request);
 }
