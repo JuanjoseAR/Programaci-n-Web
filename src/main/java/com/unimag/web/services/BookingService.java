@@ -14,4 +14,7 @@ public interface BookingService {
     BookingResponse update(Long id, BookingCreateRequest request);
 
     void delete(Long id);
+
+    Page<BookingResponse> findAllByPassenger(Long passengerId, Pageable pageable);
+
 }

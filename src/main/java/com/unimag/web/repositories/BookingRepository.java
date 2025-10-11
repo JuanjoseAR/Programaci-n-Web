@@ -21,4 +21,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         WHERE b.id = :id
     """)
     Optional<Booking> findByIdWithDetails(@Param("id") Long id);
+    Page<Booking> findAllByPassenger_Id(Long passengerId, Pageable pageable);
+
 }

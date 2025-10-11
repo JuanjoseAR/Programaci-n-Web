@@ -96,5 +96,13 @@ public class BookingServiceImpl implements BookingService {
                     .orElseThrow(() -> new NotFoundException("Flight not found with id " + flightId));
         }
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<BookingResponse> findAllByPassenger(Long passengerId, Pageable pageable) {
+        return bookingRepository.findAllByPassenger_Id(passengerId, pageable)
+                .map(bookingMapper::toResponse);
+    }
+
 }
 
