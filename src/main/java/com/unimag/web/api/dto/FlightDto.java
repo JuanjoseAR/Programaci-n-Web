@@ -16,6 +16,16 @@ public class FlightDto {
             Set<Long> tagIds
     ) implements Serializable {}
 
+    public record FlightUpdateRequest(
+            String number,
+            OffsetDateTime departureTime,
+            OffsetDateTime arrivalTime,
+            Long airlineId,
+            Long originAirportId,
+            Long destinationAirportId,
+            Set<Long> tagIds
+    ) implements Serializable {}
+
     public record FlightResponse(
             Long id,
             String number,

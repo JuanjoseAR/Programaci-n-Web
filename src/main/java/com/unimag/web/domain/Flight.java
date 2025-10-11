@@ -21,6 +21,9 @@ public class Flight {
 
     String flightNumber;
 
+    @Column(nullable = false, unique = true)
+    private String number;
+
     OffsetDateTime departureTime;
     OffsetDateTime arrivalTime;
     @ManyToOne @JoinColumn(name = "airline_id")

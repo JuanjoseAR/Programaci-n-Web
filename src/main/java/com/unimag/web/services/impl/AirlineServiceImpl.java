@@ -2,14 +2,14 @@ package com.unimag.web.services.impl;
 
 import com.unimag.web.api.dto.AirlineDto;
 import com.unimag.web.exception.NotFoundException;
-import com.unimag.web.services.mapper.AirlineMapper;
 import com.unimag.web.repositories.AirlineRepository;
 import com.unimag.web.services.AirlineService;
+import com.unimag.web.services.mapper.AirlineMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,12 +33,16 @@ public class AirlineServiceImpl implements AirlineService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<AirlineDto.AirlineResponse> findAll() {
-        return airlineRepository.findAll().stream()
-                .map(airlineMapper::toResponse)
-                .toList();
+    public Page<AirlineDto.AirlineResponse> findAll(Pageable pageable) {
+        return airlineRepository.findAll(pageable)
+                .map(airlineMapper::toResponse);
     }
+
+    @Override
+    public AirlineDto.AirlineResponse update(Long id, AirlineDto.AirlineUpdateRequest req) {
+        return null;
+    }
+
 
     @Override
     public void delete(Long id) {

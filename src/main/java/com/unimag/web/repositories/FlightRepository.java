@@ -25,6 +25,27 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
           Pageable pageable
   );
 
+    @Query("""
+      SELECT f FROM Flight f
+      LEFT JOIN f.airline a
+      LEFT JOIN f.origin o
+      LEFT JOIN f.destination d
+      WHERE (:number IS NULL OR f.number = :number)
+        AND (:origin IS NULL OR o.code = :origin)
+        AND (:destination IS NULL OR d.code = :destination)
+        AND (:airlineId IS NULL OR a.id = :airlineId)
+        AND (:from IS NULL OR f.departureTime >= :from)
+        AND (:to   IS NULL OR f.departureTime <= :to)
+      """)
+    Page<Flight> search(
+            @Param("number") String number,
+            @Param("origin") String origin,
+            @Param("destination") String destination,
+            @Param("airlineId") Long airlineId,
+            @Param("from") OffsetDateTime from,
+            @Param("to") OffsetDateTime to,
+            Pageable pageable
+    );
 
     @Query("""
         SELECT DISTINCT f FROM Flight f

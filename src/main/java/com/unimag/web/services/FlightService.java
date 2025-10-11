@@ -11,9 +11,9 @@ public interface FlightService {
     FlightResponse create(FlightCreateRequest req);
     FlightResponse get(Long id);
     Page<FlightResponse> listByAirline(String airlineName, Pageable pageable);
-    Page<FlightResponse> search(String origin, String destination, OffsetDateTime from, OffsetDateTime to, Pageable pageable);
-    List<FlightResponse> searchWithTags(List<String> tags);
+    Page<FlightResponse> search(String number, String origin, String destination, Long airlineId, OffsetDateTime from, OffsetDateTime to, Pageable pageable);    List<FlightResponse> searchWithTags(List<String> tags);
     FlightResponse addTag(Long flightId, Long tagId);
     FlightResponse removeTag(Long flightId, Long tagId);
+    FlightResponse update(Long id, FlightUpdateRequest req);
     void delete(Long id);
 }
